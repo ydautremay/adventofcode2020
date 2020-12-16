@@ -44,9 +44,7 @@ public class Part2 extends Part {
             List<Integer> toRemove = rulePositions.values().stream().filter(set -> set.size() == 1).map(set -> set.iterator().next()).collect(Collectors.toList());
             for(Set<Integer> positions : rulePositions.values()){
                 if(positions.size() > 1) {
-                    for(int column : toRemove){
-                        positions.remove(column);
-                    }
+                    positions.removeAll(toRemove);
                 }
             }
         }

@@ -3,14 +3,13 @@ package dyve.aoc2020.day.day17;
 import dyve.aoc2020.day.Part;
 import dyve.aoc2020.input.InputReader;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Part2 extends Part {
 
-    Map<Position, Cube> cubes = new HashMap<>();
+    Set<Position> actives = new HashSet<>();
+    long minX, maxX, minY, maxY, minZ, maxZ, minW, maxW;
 
     public static void main(String[] args)throws Exception{
         new Part2().subMain(17);
@@ -23,44 +22,48 @@ public class Part2 extends Part {
         initCubes(entries);
 
         for(int nb = 0; nb < 6; nb++) {
-            //Extend grid
-            cubes = extendSpace();
-            Map<Position, Cube> wip = copy(cubes);
-            //Verify neighbours
-            for (Cube cube : cubes.values()) {
-                int neighbours = countNeighbours(cube);
-                if(cube.active){
-                    if(neighbours != 2 && neighbours != 3){
-                        wip.put(cube.p, new Cube(cube.p, false));
-                    }
-                }else{
-                    if(neighbours == 3){
-                        wip.put(cube.p, new Cube(cube.p, true));
+            minX --;maxX++;
+            minY--;maxY++;
+            minZ--;maxZ++;
+            minW--;maxW++;
+            Position p = new Position(0, 0, 0, 0);
+            Set<Position> wip = new HashSet<>(actives);
+            for (long x = minX; x <= maxX; x++) {
+                for (long y = minY; y <= maxY; y++) {
+                    for (long z = minZ; z <= maxZ; z++) {
+                        for (long w = minW; w <= maxW; w++) {
+                            p.replace(x, y, z, w);
+                            int neighbours = countNeighbours(p);
+                            if(actives.contains(p)){
+                                if(neighbours != 2 && neighbours != 3){
+                                    wip.remove(p);
+                                }
+                            }else{
+                                if(neighbours == 3){
+                                    wip.add(new Position(p));
+                                }
+                            }
+                        }
                     }
                 }
             }
-            cubes = wip;
+            actives = wip;
         }
-        long nbActive = 0;
-        for(Cube cube : cubes.values()){
-            if(cube.active)
-                nbActive++;
-        }
-        return nbActive;
+        return actives.size();
     }
 
-    private int countNeighbours(Cube cube) {
+    private int countNeighbours(Position p) {
         int neighbours = 0;
-        for (long x = cube.p.x - 1; x <= cube.p.x + 1; x++) {
-            for (long y = cube.p.y - 1; y <= cube.p.y + 1; y++) {
-                for (long z = cube.p.z - 1; z <= cube.p.z + 1; z++) {
-                    for (long w = cube.p.w - 1; w <= cube.p.w + 1; w++) {
-                        if (cube.p.x == x && cube.p.y == y && cube.p.z == z && cube.p.w == w) {
+        Position test = new Position(0, 0, 0, 0);
+        for (long x = p.x - 1; x <= p.x + 1; x++) {
+            for (long y = p.y - 1; y <= p.y + 1; y++) {
+                for (long z = p.z - 1; z <= p.z + 1; z++) {
+                    for (long w = p.w - 1; w <= p.w + 1; w++) {
+                        if (p.x == x && p.y == y && p.z == z && p.w == w) {
                             continue;
                         }
-                        Position p = new Position(x, y, z, w);
-                        Cube neighbour = cubes.get(p);
-                        if (neighbour != null && neighbour.active) {
+                        test.replace(x, y, z, w);
+                        if (actives.contains(test)) {
                             neighbours++;
                         }
                     }
@@ -70,24 +73,6 @@ public class Part2 extends Part {
         return neighbours;
     }
 
-    private Map<Position, Cube> extendSpace() {
-        Map<Position, Cube> result = new HashMap<>();
-        for (Cube cube : cubes.values()) {
-            for (long x = cube.p.x - 1; x <= cube.p.x + 1; x++) {
-                for (long y = cube.p.y - 1; y <= cube.p.y + 1; y++) {
-                    for (long z = cube.p.z - 1; z <= cube.p.z + 1; z++) {
-                        for (long w = cube.p.w - 1; w <= cube.p.w + 1; w++) {
-                            Position p = new Position(x, y, z, w);
-                            Cube c = cubes.getOrDefault(p, new Cube(p, false));
-                            result.put(p, c);
-                        }
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
     private void initCubes(List<String> entries) {
         for (int i = 0; i < entries.size(); i++){
             String entry = entries.get(i);
@@ -95,19 +80,18 @@ public class Part2 extends Part {
                 char c = entry.charAt(j);
                 Position p = new Position(j, i, 0, 0);
                 if(c == '#'){
-                    cubes.put(p, new Cube(p, true));
-                }else{
-                    cubes.put(p, new Cube(p, false));
+                    actives.add(p);
                 }
             }
         }
+        minX = 0L;
+        maxX = entries.size();
+        minY = 0L;
+        maxY = entries.get(0).length();
+        minZ = 0L;
+        maxZ = 0L;
+        minW = 0L;
+        maxW = 0L;
     }
 
-    private Map<Position, Cube> copy(Map<Position, Cube> original){
-        Map<Position, Cube> copy = new HashMap<>();
-        for(Position p : original.keySet()){
-            copy.put(p, new Cube(p, original.get(p).active));
-        }
-        return copy;
-    }
 }
